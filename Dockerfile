@@ -4,10 +4,10 @@ FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
 # FROM nvidia/cuda:10.1-devel-ubuntu18.04
 WORKDIR /app/data/scripts
 
-# RUN set -xe \
-#     && apt-get update \
-#     && apt-get install python3-pip -y
-# RUN apt-get install python3-pip -y
+RUN set -xe \
+    && apt-get update \
+    && apt-get install python3-pip -y
+RUN apt-get install python3-pip -y
 
 # COPY requirements.txt /app/data/scripts/requirements.txt
 # RUN python3 -m pip install -r requirements.txt --no-cache-dir
