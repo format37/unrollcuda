@@ -1,14 +1,13 @@
 import pycuda.driver as drv
 from pycuda import gpuarray
 from pycuda.compiler import SourceModule
-import pycuda
 import numpy as np
 # import mcubes
 # import time
 from datetime import datetime, timedelta
 
 # print pycuda version
-print('PyCUDA version: ', pycuda.__version__)
+print('PyCUDA version: ', drv.VERSION_TEXT)
 # Print numpy version
 print('Numpy version: ', np.__version__)
 
