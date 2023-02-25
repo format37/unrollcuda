@@ -9,8 +9,8 @@ RUN set -xe \
     && apt-get install python3-pip -y
 RUN apt-get install python3-pip -y
 
-# COPY requirements.txt /app/data/scripts/requirements.txt
-# RUN python3 -m pip install -r requirements.txt --no-cache-dir
+COPY requirements.txt /app/data/scripts/requirements.txt
+RUN python3 -m pip install -r requirements.txt --no-cache-dir
 # RUN python3 -m pip install dask
 # RUN python3 -m pip install distributed
 # RUN python3 -m pip install PyMCubes
