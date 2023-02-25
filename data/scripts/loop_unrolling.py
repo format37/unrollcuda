@@ -65,10 +65,10 @@ print('Steps count: ', steps_count)
 # Define the kernel function
 kernel_code = """__global__ void test(
         bool *arr,
-        unsigned char shape_0,
-        unsigned char shape_1,
-        unsigned char shape_2,
-        unsigned char step
+        unsigned int shape_0,
+        unsigned int shape_1,
+        unsigned int shape_2,
+        unsigned long long step
         )
     {
         unsigned int idx, x, y, z;
@@ -91,6 +91,20 @@ kernel_code = """__global__ void test(
             */
         }
     }
+
+/* ### Define the datatypes carefully ###
+Length (bytes) NumPy type	CUDA type
+1 np.int8	    signed char 2**7-1 == 127
+2 np.int16	    short 2**15-1 == 32767
+4 np.int32	    int 2**31-1 == 2147483647
+8 np.int64	    long long 2**63-1 == 9223372036854775807
+1 np.uint8	    unsigned char 2**8-1 == 255
+2 np.uint16	    unsigned short 2**16-1 == 65535
+4 np.uint32     unsigned int 2**32-1 == 4294967295
+8 np.uint64     unsigned long long 2**64-1 == 18446744073709551615
+4 np.float32	float 2**32-1 == 4294967295
+8 np.float64    double 2**64-1 == 18446744073709551615
+*/
 """
 ker = SourceModule(kernel_code)
 gpu_test = ker.get_function("test")
@@ -99,9 +113,9 @@ gpu_test = ker.get_function("test")
 print('Calling the kernel...')
 gpu_test(
     gpu_arr,
-    np.uint8(shape_0),
-    np.uint8(shape_1),
-    np.uint8(shape_2),
+    np.uint32(shape_0),
+    np.uint32(shape_1),
+    np.uint32(shape_2),
     np.uint64(step),
     block=block,
     grid=grid
