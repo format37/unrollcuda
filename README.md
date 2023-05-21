@@ -7,7 +7,6 @@ To overcome limits with the minimal performance disadvantages, we can utilize:
 | loop unrolling | N-dimension representation |
 | adressing | Extending the core count limits |
 | batching | Extending the memory limits |
-| -- | -- |
   
 Let's start from case, when the memory is enough but the count of array elements is bigger than available max_grid_x which is always 2147483647 elements.  
 Following the CUDA datatypes  sheet:  
