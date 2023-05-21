@@ -2,11 +2,11 @@
 GPU device is nice for parallel computing, bit each GPU device have its limitations in available memory and core count. Does it means limits for computation? Of course, ~~not~~ yes.
 But we can extend the limits with some tricks.  
 To overcome limits with the minimal performance disadvantages, we can utilize:  
-| Approach | Issue |
-| -------- | ----- |
-| loop unrolling | N-dimension representation |
-| adressing | Extending the core count limits |
-| batching | Extending the memory limits |
+| Issue | Approach |
+| ----- | -------- |
+| N-dimension representation | loop unrolling |
+| Extending the core count limits | addressing |
+| Extending the memory limits | batching |
   
 Let's start from case, when the memory is enough but the count of array elements is bigger than available max_grid_x which is always 2147483647 elements.  
 Following the CUDA datatypes  sheet:  
