@@ -38,6 +38,8 @@ __global__ void loop_unrolling(
             }
             arr[idx_full] = false;
         }
+        // print idx_full
+        // printf("%llu\n", idx_full);
         i += 1;
         idx_full = start_idx + i * step + idx;
     }

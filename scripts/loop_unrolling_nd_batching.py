@@ -17,17 +17,14 @@ def set_second_to_true(arr):
 
 def unroll_cuda(
         reshape_order,
-        device_id,
         shape,
         arr,
-        batch_size
+        batch_size,
+        max_block_x,
+        max_grid_x,
+        dev,
+        ctx
     ):
-    drv.init()
-    dev = drv.Device(device_id)
-    ctx = dev.make_context()
-
-    max_block_x = 8
-    max_grid_x = 2
 
     print('Shape: ', shape)
     print('Dimensions count: ', len(shape))
@@ -39,7 +36,7 @@ def unroll_cuda(
 
     # Number of iterations required
     num_iterations = int(np.ceil(len(arr) / float(batch_size)))
-    print('Number of iterations: ', num_iterations)
+    print(gpu_shape.size, batch_size, 'Number of iterations: ', num_iterations)
 
     # Process each batch
     for i in range(num_iterations):
@@ -63,7 +60,7 @@ def unroll_cuda(
         steps_count = int(np.ceil(gpu_arr.size / step))
         print('Steps count: ', steps_count)
 
-        with open('loop_unrolling_nd.cu', 'r') as f:
+        with open('loop_unrolling_nd_batching.cu', 'r') as f:
             kernel_code = f.read()
         ker = SourceModule(kernel_code)
         loop_unrolling = ker.get_function("loop_unrolling")
@@ -90,18 +87,30 @@ def unroll_cuda(
 
 def main():
 
+    drv.init()
+    device_id = 0
+    dev = drv.Device(device_id)
+    ctx = dev.make_context()
+
     reshape_order = 'C'
-    device_id = 0    
-    shape = [21]
+        
+    shape = [3,7,4,5,8]
     arr = np.zeros(shape, dtype=np.bool_, order=reshape_order)
-    batch_size = 4
+    batch_size = 15
+    # max_block_x = int(int(drv.Device(device_id).get_attribute(drv.device_attribute.MAX_BLOCK_DIM_X)))
+    max_block_x = 8
+    # max_grid_x = int(int(drv.Device(device_id).get_attribute(drv.device_attribute.MAX_GRID_DIM_X)))
+    max_grid_x = 2    
 
     arr_new = unroll_cuda(
         reshape_order,
-        device_id,
         shape,
         arr,
-        batch_size
+        batch_size,
+        max_block_x,
+        max_grid_x,
+        dev,
+        ctx
     )
 
     # Prepare the test array
