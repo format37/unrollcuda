@@ -15,11 +15,12 @@ def set_second_to_true(arr):
     return arr
 
 
-def main():
-
-    reshape_order = 'C'
-
-    device_id = 0
+def unroll_cuda(
+        reshape_order,
+        device_id,
+        shape,
+        arr
+    ):
     drv.init()
     dev = drv.Device(device_id)
     ctx = dev.make_context()
@@ -35,9 +36,7 @@ def main():
     max_grid_x = 2
 
     # Define the zeros boolean array
-    shape = [4,3,5,8,3,4,3,7]
     print('Shape: ', shape)
-    arr = np.zeros(shape, dtype=np.bool_, order=reshape_order)
     # Print diomensions count
     print('Dimensions count: ', len(shape))
 
@@ -86,14 +85,30 @@ def main():
     # Clean up
     ctx.pop()
 
+    return arr_new
+
+
+
+def main():
+
+    reshape_order = 'C'
+
+    device_id = 0
+    
+    shape = [4,3,5,8,3,4,3,7]
+    arr = np.zeros(shape, dtype=np.bool_, order=reshape_order)
+
+    arr_new = unroll_cuda(
+        reshape_order,
+        device_id,
+        shape,
+        arr
+    )
+
     # Prepare the test array
     arr_test = arr.copy()
     # Set all elements on axis to True
     arr_test = set_second_to_true(arr_test)
-    
-    """print('Result:\n', 'arr_test', 'arr_new')
-    for i in range(0, len(arr)):
-        print(arr_test[i], arr_new[i])"""
 
     # Check the result
     print('Check result: ', np.array_equal(arr_new, arr_test))
