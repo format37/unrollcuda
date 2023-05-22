@@ -11,13 +11,6 @@ def init_array(shape):
     return arr
 
 
-def check_result(arr, unrolled_arr):
-    # Reverse the values of initial boolean array
-    reversed_arr = ~arr
-    # Compare the reversed array with the unrolled array
-    return np.array_equal(reversed_arr, unrolled_arr)
-
-
 def main():
 
     device_id = 1
@@ -77,12 +70,12 @@ def main():
     ctx.pop()
 
     # print('Result:\n', arr_new)
-    print('Result:\n', 'arr', 'arr_new')
-    for i in range(0, len(arr)):
-        print(arr[i], arr_new[i])
+    # print('Result:\n', 'arr', 'arr_new')
+    # for i in range(0, len(arr)):
+    #     print(arr[i], arr_new[i])
 
     # Check the result
-    print('Check result: ', check_result(arr, arr_new))
+    print('Check result: ', np.array_equal(arr, ~arr_new))
 
 
 if __name__ == '__main__':
