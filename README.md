@@ -35,6 +35,11 @@ That is the limits we have in 2023.
 Let's simplify our bench. I will define my max_grid_x as 10. Currently we don't need to mind about memory, then suppose that memory is enough.  
 To operate the 30-sized array with a 10-sized max_grid_x, we will utilize loop-unrolling approach.
 
+### Threads and cores and registers
+In your CUDA kernel, each thread has its own private local memory. When you declare a variable within a thread, such as unsigned long long x;, it's stored in this local memory. The size of this local memory does not impact the global memory of the GPU, but it does affect the register usage. Each CUDA core has a limited number of registers, and if your kernel uses too many registers, it can limit the number of concurrent threads that can be run on each Streaming Multiprocessor (SM), reducing overall performance.
+
+In this case, an unsigned long long is indeed 8 bytes, which corresponds to 64 bits. This does not inherently lead to a huge amount of GPU memory usage unless you have a very high number of threads each using such a variable. Remember, this memory usage is per-thread, not per-core. Each core doesn't hold a separate copy of the variable for each thread it might execute, but rather each thread has its own private copy of the variable.
+
 ## CUDA information
 ## 1D sample
 ## 1D addressing
