@@ -50,9 +50,9 @@ To check, run:
 ```
 sh run.sh
 ```
+### Memory limit issue: batching
+Batching is a technique to overcome the memory limits.
 ## 1D addressing
-### 
-### Memory limit
 ## 2D addressing
 ## 3D addressing
 ## nD addressing
