@@ -47,7 +47,7 @@ def unroll_cuda(
 
     # Steps count
     steps_count = int(np.ceil(arr.size / step))
-    print('Steps count: ', steps_count)
+    # print('Steps count: ', steps_count)
 
     # Read the kernel function from the file
     with open('loop_unrolling_nd.cu', 'r') as f:
@@ -56,7 +56,9 @@ def unroll_cuda(
     loop_unrolling = ker.get_function("loop_unrolling")
 
     for i in range(steps_count):
-        print('Step: ', i)
+        # each 1k elements
+        if i % 1000 == 0:
+            print('Step: ', i, '/', steps_count, end='\r')
         # Determine the size of this batch
         batch_size = min(step, arr.size - i * step)
 
@@ -92,18 +94,23 @@ def main():
 
     reshape_order = 'C'
 
-    memory_batch_size = 70
-    shape = [23]
+    shape = [123,234,574]
     arr = np.zeros(shape, dtype=np.bool_, order=reshape_order)
     # Max block x
     max_block_x = dev.get_attribute(drv.device_attribute.MAX_BLOCK_DIM_X)
     # Max grid x
     max_grid_x = dev.get_attribute(drv.device_attribute.MAX_GRID_DIM_X)
-
     # Redefine max block x
-    max_block_x = 8
+    # max_block_x = 8
     # Redefine max grid x
-    max_grid_x = 2
+    # max_grid_x = 2
+    # Memory batch size
+    memory_batch_size = max_block_x * 265
+
+    print('Max block x: ', max_block_x)
+    print('Max grid x: ', max_grid_x)
+    print('Memory batch size: ', memory_batch_size)
+    print('Array size: ', arr.size)
 
     arr_new = unroll_cuda(
         reshape_order,
