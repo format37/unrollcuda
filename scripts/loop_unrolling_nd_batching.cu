@@ -4,19 +4,17 @@ __global__ void loop_unrolling(
     unsigned long long shape_total,
     unsigned long long dimensions_count,
     unsigned long long step,
-    unsigned char order,
-    unsigned long long batch,
-    unsigned long long memory_batching_size
+    unsigned char order
 )
 {
-    unsigned long long idx = threadIdx.x + blockIdx.x * blockDim.x + batch * memory_batching_size;
+    unsigned long long idx = threadIdx.x + blockIdx.x * blockDim.x;
     unsigned long long idx_full;
     unsigned int i = 0;
     unsigned int *indices = new unsigned int[dimensions_count]; // array to hold the computed indices
     unsigned long long tmp;
     
     idx_full = i * step + idx;
-    while (idx_full < shape_total && idx_full < (batch + 1) * memory_batching_size)
+    while (idx_full < shape_total)
     {
         tmp = idx_full;
         // Compute the indices
