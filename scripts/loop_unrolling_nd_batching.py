@@ -30,64 +30,69 @@ def unroll_cuda(
     # Print diomensions count
     print('Dimensions count: ', len(shape))
 
-    
-
     arr = arr.reshape(-1, order=reshape_order)
 
-    arr_new = np.zeros(arr.shape, dtype=np.bool_, order=reshape_order)
+    result_array = np.zeros(arr.shape, dtype=np.bool_, order=reshape_order)
 
-    # for batch in range(batch_size):
-        
-    
+    # batch_step = int(np.ceil(arr.size / batch_size))
+    # print('Batch step: ', batch_step)
 
-    # Send array to gpu
-    gpu_arr = gpuarray.to_gpu(arr)
-    print('GPU array size: ', gpu_arr.size)
+    batch_start = 0
 
-    # Send shape to gpu
-    gpu_shape = gpuarray.to_gpu(np.array(shape, dtype=np.uint32))
+    while batch_start < arr.size:
+        print('\nBatch start: ', batch_start)
 
-    # Block and grid
-    block = (int(max_block_x), 1, 1)
-    print('Block: ', block)
-    grid = (int(min(np.ceil(gpu_arr.size/max_block_x),max_grid_x)), 1, 1)
-    print('Grid: ', grid)
+        # Send array to gpu
+        gpu_arr = gpuarray.to_gpu(arr[batch_start:batch_start+batch_size])
+        print('GPU array size: ', gpu_arr.size)
 
-    # Step
-    step = grid[0] * block[0]
-    print('Step: ', step)
+        # Send shape to gpu
+        gpu_shape = gpuarray.to_gpu(np.array(shape, dtype=np.uint32))
 
-    # Steps count
-    steps_count = int(np.ceil(gpu_arr.size / step))
-    print('Steps count: ', steps_count)
+        # Block and grid
+        block = (int(max_block_x), 1, 1)
+        print('Block: ', block)
+        grid = (int(min(np.ceil(gpu_arr.size/max_block_x),max_grid_x)), 1, 1)
+        print('Grid: ', grid)
 
-    # Read the kernel function from the file
-    with open('loop_unrolling_nd_batching.cu', 'r') as f:
-        kernel_code = f.read()
-    ker = SourceModule(kernel_code)
-    loop_unrolling = ker.get_function("loop_unrolling")
+        # Step
+        step = grid[0] * block[0]
+        print('Step: ', step)
 
-    # Call the kernel
-    loop_unrolling(
-        gpu_arr, # arr
-        gpu_shape, # shape
-        np.uint64(gpu_arr.size), # shape_total
-        np.uint64(len(shape)), # shape_count
-        np.uint64(step), # step
-        np.uint8(0 if reshape_order=='C' else 1), # unsigned char order
-        block=block,
-        grid=grid
-    )
-    # Downloading the array...
-    arr_new = gpu_arr.get()
+        # Steps count
+        steps_count = int(np.ceil(gpu_arr.size / step))
+        print('Steps count: ', steps_count)
+
+        # Read the kernel function from the file
+        with open('loop_unrolling_nd_batching.cu', 'r') as f:
+            kernel_code = f.read()
+        ker = SourceModule(kernel_code)
+        loop_unrolling = ker.get_function("loop_unrolling")
+
+        # Call the kernel
+        loop_unrolling(
+            gpu_arr, # arr
+            gpu_shape, # shape
+            np.uint64(arr.shape), # shape_total
+            np.uint64(len(shape)), # shape_count
+            np.uint64(step), # step
+            np.uint8(0 if reshape_order=='C' else 1), # unsigned char order
+            np.uint64(batch_start), # batch_start
+            block=block,
+            grid=grid
+        )
+        # Downloading the array...
+        result_array[ batch_start:batch_start+batch_size ] = gpu_arr.get()
+
+        batch_start += batch_size
 
     # Reshape the array
-    arr_new = arr_new.reshape(shape, order=reshape_order)
+    result_array = result_array.reshape(shape, order=reshape_order)
 
     # Clean up
     ctx.pop()
 
-    return arr_new
+    return result_array
 
 
 def main():
@@ -100,7 +105,6 @@ def main():
 
     shape = [4,5]
     batch_size = 10
-    batch_size = shape
 
     arr = np.zeros(shape, dtype=np.bool_, order=reshape_order)
     # Max block x
@@ -108,9 +112,9 @@ def main():
     # Max grid x
     max_grid_x = dev.get_attribute(drv.device_attribute.MAX_GRID_DIM_X)
     # Redefine max block x
-    max_block_x = int(input('Max block x: '))
+    # max_block_x = int(input('Max block x: '))
     # Redefine max grid x
-    max_grid_x = int(input('Max grid x: '))
+    # max_grid_x = int(input('Max grid x: '))
 
     print('Max block x: ', max_block_x)
     print('Max grid x: ', max_grid_x)
@@ -133,11 +137,11 @@ def main():
     arr_test = set_second_to_true(arr_test)
 
     # Check the result
-    print('Check result: ', np.array_equal(arr_new, arr_test))
+    print('\nCheck result: ', np.array_equal(arr_new, arr_test))
     # Print arr
-    # print('Array test: ', arr_test)
+    print('Array test: ', arr_test)
     # Print arr_new
-    # print('Array new: ', arr_new)
+    print('Array new: ', arr_new)
 
 
 if __name__ == '__main__':

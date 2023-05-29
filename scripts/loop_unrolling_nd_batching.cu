@@ -4,7 +4,8 @@ __global__ void loop_unrolling(
     unsigned long long shape_total,
     unsigned long long dimensions_count,
     unsigned long long step,
-    unsigned char order
+    unsigned char order,
+    unsigned long long batch_start
 )
 {
     unsigned long long idx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -13,7 +14,9 @@ __global__ void loop_unrolling(
     unsigned int *indices = new unsigned int[dimensions_count]; // array to hold the computed indices
     unsigned long long tmp;
     
-    idx_full = i * step + idx;
+    // idx_full = i * step + idx;
+    idx_full = i * step + idx + batch_start; // Add batch_start here
+
     while (idx_full < shape_total)
     {
         tmp = idx_full;
@@ -32,10 +35,11 @@ __global__ void loop_unrolling(
             // j is the dimension
             if (indices[j] == 1)
             {
-                arr[idx_full] = true;
+                printf("idx_full: %llu, idx: %llu, batch_start: %llu\n", idx_full, idx, batch_start);
+                arr[idx_full - batch_start] = true;
                 break;
             }
-            arr[idx_full] = false;
+            arr[idx_full - batch_start] = false;
         }
         i += 1;
         idx_full = i * step + idx;
