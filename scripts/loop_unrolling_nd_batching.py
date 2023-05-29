@@ -30,7 +30,15 @@ def unroll_cuda(
     # Print diomensions count
     print('Dimensions count: ', len(shape))
 
-    arr_new = np.zeros(shape, dtype=np.bool_, order=reshape_order)
+    
+
+    arr = arr.reshape(-1, order=reshape_order)
+
+    arr_new = np.zeros(arr.shape, dtype=np.bool_, order=reshape_order)
+
+    # for batch in range(batch_size):
+        
+    
 
     # Send array to gpu
     gpu_arr = gpuarray.to_gpu(arr)
@@ -73,6 +81,9 @@ def unroll_cuda(
     # Downloading the array...
     arr_new = gpu_arr.get()
 
+    # Reshape the array
+    arr_new = arr_new.reshape(shape, order=reshape_order)
+
     # Clean up
     ctx.pop()
 
@@ -87,7 +98,9 @@ def main():
 
     reshape_order = 'C' # C or F
 
-    shape = [23,92,3,2,997]
+    shape = [4,5]
+    batch_size = 10
+    batch_size = shape
 
     arr = np.zeros(shape, dtype=np.bool_, order=reshape_order)
     # Max block x
@@ -98,8 +111,6 @@ def main():
     max_block_x = int(input('Max block x: '))
     # Redefine max grid x
     max_grid_x = int(input('Max grid x: '))
-    # Memory batch size    
-    batch_size = int(input('Batch size: '))
 
     print('Max block x: ', max_block_x)
     print('Max grid x: ', max_grid_x)
@@ -123,6 +134,10 @@ def main():
 
     # Check the result
     print('Check result: ', np.array_equal(arr_new, arr_test))
+    # Print arr
+    # print('Array test: ', arr_test)
+    # Print arr_new
+    # print('Array new: ', arr_new)
 
 
 if __name__ == '__main__':
