@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling","numpy"]
+requires = ["hatchling","numpy","pycuda"]
 build-backend = "hatchling.build"
 
 [project]
 name = "unrollcuda"
-version = "0.0.2"
+version = "0.0.3"
 authors = [
   { name="Aleksei Iurasov", email="format37@gmail.com" },
 ]
@@ -16,7 +16,7 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
 ]
-dependencies = ["numpy"]
+dependencies = ["numpy","pycuda"]
 
 [project.urls]
 "Homepage" = "https://github.com/format37/unrollcuda"
