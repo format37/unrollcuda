@@ -34,7 +34,7 @@ __global__ void loop_unrolling(
             // j is the dimension
             if (indices[j] == 1)
             {
-                printf("idx_full: %llu, idx: %llu, batch_start: %llu\n", idx_full, idx, batch_start);
+                //printf("idx_full: %llu, idx: %llu, batch_start: %llu\n", idx_full, idx, batch_start);
                 arr[idx_full] = true;
                 break;
             }

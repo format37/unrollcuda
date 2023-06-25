@@ -104,6 +104,12 @@ def main():
     reshape_order = 'C' # C or F
 
     shape = [4,3]
+    
+    # Input dimensions count
+    dimensions_count = int(input('Dimensions count: '))
+    # Redefine shape
+    shape = [int(input('Dimension size: ')) for i in range(dimensions_count)]    
+    
     batch_size = 4*5
 
     arr = np.zeros(shape, dtype=np.bool_, order=reshape_order)
@@ -112,9 +118,12 @@ def main():
     # Max grid x
     max_grid_x = dev.get_attribute(drv.device_attribute.MAX_GRID_DIM_X)
     # Redefine max block x
-    # max_block_x = int(input('Max block x: '))
+    max_block_x = int(input('Max block x: '))
     # Redefine max grid x
-    # max_grid_x = int(input('Max grid x: '))
+    max_grid_x = int(input('Max grid x: '))
+    # Redefine batch size
+    batch_size = int(input('Batch size: '))
+    # Redefine array size
 
     print('Max block x: ', max_block_x)
     print('Max grid x: ', max_grid_x)
