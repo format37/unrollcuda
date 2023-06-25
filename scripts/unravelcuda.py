@@ -1,7 +1,26 @@
+####################################################################################################
+# The core idea of this solution is to give a way to solve the following tasks:
+# 1. To compute in CUDA any size and any count of dimensions array
+# 2. To use batching to compute any size array, even if it s big that can't be fitted in GPU memory
+####################################################################################################
+
 import pycuda.driver as drv
 from pycuda import gpuarray
 from pycuda.compiler import SourceModule
 import numpy as np
+import unittest
+
+
+class TestCudaScript(unittest.TestCase):
+
+    def test_case_2(self):
+        # In this test case, we pass in parameters and validate the result.
+        dimension_sizes = [3, 8, 4]
+        max_block_x = 4
+        max_grid_x = 4
+        batch_size = 20
+        result = main(dimension_sizes, max_block_x, max_grid_x, batch_size)
+        self.assertEqual(result, True)
 
 
 def set_second_to_true(arr):
@@ -24,78 +43,56 @@ def unroll_cuda(
         max_grid_x,
         ctx
     ):
-
-    # Define the zeros boolean array
     print('Shape: ', shape)
-    # Print diomensions count
     print('Dimensions count: ', len(shape))
 
     arr = arr.reshape(-1, order=reshape_order)
-
     result_array = np.zeros(arr.shape, dtype=np.bool_, order=reshape_order)
-
-    # batch_step = int(np.ceil(arr.size / batch_size))
-    # print('Batch step: ', batch_step)
+    total_elements = arr.size
 
     batch_start = 0
-
-    while batch_start < arr.size:
+    while batch_start < total_elements:
         print('\nBatch start: ', batch_start)
 
-        # Send array to gpu
         gpu_arr = gpuarray.to_gpu(arr[batch_start:batch_start+batch_size])
         print('GPU array size: ', gpu_arr.size)
 
-        # Send shape to gpu
         gpu_shape = gpuarray.to_gpu(np.array(shape, dtype=np.uint32))
-
-        # Block and grid
         block = (int(max_block_x), 1, 1)
         print('Block: ', block)
-        grid = (int(min(np.ceil(gpu_arr.size/max_block_x),max_grid_x)), 1, 1)
+        grid = (int(min(np.ceil(gpu_arr.size / max_block_x), max_grid_x)), 1, 1)
         print('Grid: ', grid)
 
-        # Step
         step = grid[0] * block[0]
         print('Step: ', step)
 
-        # Steps count
-        steps_count = int(np.ceil(gpu_arr.size / step))
-        print('Steps count: ', steps_count)
-
-        # Read the kernel function from the file
-        with open('loop_unrolling_nd_batching.cu', 'r') as f:
+        with open('unravelcuda.cu', 'r') as f:
             kernel_code = f.read()
         ker = SourceModule(kernel_code)
         loop_unrolling = ker.get_function("loop_unrolling")
 
-        # Call the kernel
         loop_unrolling(
-            gpu_arr, # arr
-            gpu_shape, # shape
-            np.uint64(arr.shape), # shape_total
-            np.uint64(len(shape)), # shape_count
-            np.uint64(step), # step
-            np.uint8(0 if reshape_order=='C' else 1), # unsigned char order
-            np.uint64(batch_start), # batch_start
+            gpu_arr,
+            gpu_shape,
+            np.uint64(gpu_arr.size),
+            np.uint64(arr.shape),
+            np.uint64(len(shape)),
+            np.uint64(step),
+            np.uint8(0 if reshape_order=='C' else 1),
+            np.uint64(batch_start),
             block=block,
             grid=grid
         )
-        # Downloading the array...
-        result_array[ batch_start:batch_start+batch_size ] = gpu_arr.get()
 
-        batch_start += batch_size - 1
+        result_array[batch_start:batch_start+gpu_arr.size] = gpu_arr.get()
+        batch_start += batch_size
 
-    # Reshape the array
     result_array = result_array.reshape(shape, order=reshape_order)
-
-    # Clean up
     ctx.pop()
-
     return result_array
 
 
-def main():
+def main(dimension_sizes, max_block_x, max_grid_x, batch_size):
 
     drv.init()
     dev = drv.Device(0)
@@ -103,27 +100,9 @@ def main():
 
     reshape_order = 'C' # C or F
 
-    shape = [4,3]
-    
-    # Input dimensions count
-    dimensions_count = int(input('Dimensions count: '))
-    # Redefine shape
-    shape = [int(input('Dimension size: ')) for i in range(dimensions_count)]    
-    
-    batch_size = 4*5
+    shape = [int(size) for size in dimension_sizes]
 
     arr = np.zeros(shape, dtype=np.bool_, order=reshape_order)
-    # Max block x
-    max_block_x = dev.get_attribute(drv.device_attribute.MAX_BLOCK_DIM_X)
-    # Max grid x
-    max_grid_x = dev.get_attribute(drv.device_attribute.MAX_GRID_DIM_X)
-    # Redefine max block x
-    max_block_x = int(input('Max block x: '))
-    # Redefine max grid x
-    max_grid_x = int(input('Max grid x: '))
-    # Redefine batch size
-    batch_size = int(input('Batch size: '))
-    # Redefine array size
 
     print('Max block x: ', max_block_x)
     print('Max grid x: ', max_grid_x)
@@ -145,13 +124,16 @@ def main():
     # Set all elements on axis to True
     arr_test = set_second_to_true(arr_test)
 
-    # Check the result
-    print('\nResult check: ', np.array_equal(arr_new, arr_test))
     # Print arr
-    print('Array test: ', arr_test)
+    # print('Array test: ', arr_test)
     # Print arr_new
-    print('Array new: ', arr_new)
+    # print('Array new: ', arr_new)
+
+    # Check the result
+    result_check = np.array_equal(arr_new, arr_test)
+    print('\nResult check: ', result_check)
+    return result_check
 
 
 if __name__ == '__main__':
-    main()
+    unittest.main()
