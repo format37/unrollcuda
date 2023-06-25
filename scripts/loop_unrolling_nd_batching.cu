@@ -14,8 +14,7 @@ __global__ void loop_unrolling(
     unsigned int *indices = new unsigned int[dimensions_count]; // array to hold the computed indices
     unsigned long long tmp;
     
-    // idx_full = i * step + idx;
-    idx_full = i * step + idx + batch_start; // Add batch_start here
+    idx_full = i * step + idx;
 
     while (idx_full < shape_total)
     {
@@ -36,10 +35,10 @@ __global__ void loop_unrolling(
             if (indices[j] == 1)
             {
                 printf("idx_full: %llu, idx: %llu, batch_start: %llu\n", idx_full, idx, batch_start);
-                arr[idx_full - batch_start] = true;
+                arr[idx_full] = true;
                 break;
             }
-            arr[idx_full - batch_start] = false;
+            arr[idx_full] = false;
         }
         i += 1;
         idx_full = i * step + idx;

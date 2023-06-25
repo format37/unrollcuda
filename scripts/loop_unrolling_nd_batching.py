@@ -84,7 +84,7 @@ def unroll_cuda(
         # Downloading the array...
         result_array[ batch_start:batch_start+batch_size ] = gpu_arr.get()
 
-        batch_start += batch_size
+        batch_start += batch_size - 1
 
     # Reshape the array
     result_array = result_array.reshape(shape, order=reshape_order)
@@ -103,8 +103,8 @@ def main():
 
     reshape_order = 'C' # C or F
 
-    shape = [4,5]
-    batch_size = 10
+    shape = [4,3]
+    batch_size = 4*5
 
     arr = np.zeros(shape, dtype=np.bool_, order=reshape_order)
     # Max block x
@@ -137,11 +137,11 @@ def main():
     arr_test = set_second_to_true(arr_test)
 
     # Check the result
-    print('\nCheck result: ', np.array_equal(arr_new, arr_test))
+    print('\nResult check: ', np.array_equal(arr_new, arr_test))
     # Print arr
-    print('Array test: ', arr_test)
+    # print('Array test: ', arr_test)
     # Print arr_new
-    print('Array new: ', arr_new)
+    # print('Array new: ', arr_new)
 
 
 if __name__ == '__main__':
