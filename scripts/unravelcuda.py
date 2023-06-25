@@ -4,23 +4,39 @@
 # 2. To use batching to compute any size array, even if it s big that can't be fitted in GPU memory
 ####################################################################################################
 
+import argparse
 import pycuda.driver as drv
 from pycuda import gpuarray
 from pycuda.compiler import SourceModule
 import numpy as np
 import unittest
+import random
 
 
 class TestCudaScript(unittest.TestCase):
+    
+    def generate_random_tests(self, count, dimensions_count_max, dimension_value_max, max_block_x_max, max_grid_x_max, batch_size_max):
+        random_tests = []
+        for _ in range(count):
+            dimension_sizes = [random.randint(2, dimension_value_max) for _ in range(random.randint(0, dimensions_count_max))]
+            max_block_x = random.randint(4, max_block_x_max)
+            max_grid_x = random.randint(4, max_grid_x_max)
+            batch_size = random.randint(2, batch_size_max)
+            random_tests.append((dimension_sizes, max_block_x, max_grid_x, batch_size))
+        return random_tests
 
-    def test_case_2(self):
-        # In this test case, we pass in parameters and validate the result.
-        dimension_sizes = [3, 8, 4]
-        max_block_x = 4
-        max_grid_x = 4
-        batch_size = 20
-        result = main(dimension_sizes, max_block_x, max_grid_x, batch_size)
-        self.assertEqual(result, True)
+    def test_random_cases(self):
+        random_tests = self.generate_random_tests(
+            count=100,
+            dimensions_count_max=6, 
+            dimension_value_max=20, 
+            max_block_x_max=300, 
+            max_grid_x_max=300, 
+            batch_size_max=1000
+            )
+        for dimension_sizes, max_block_x, max_grid_x, batch_size in random_tests:
+            result = main(dimension_sizes, max_block_x, max_grid_x, batch_size)
+            self.assertEqual(result, True)
 
 
 def set_second_to_true(arr):
@@ -124,16 +140,29 @@ def main(dimension_sizes, max_block_x, max_grid_x, batch_size):
     # Set all elements on axis to True
     arr_test = set_second_to_true(arr_test)
 
-    # Print arr
-    # print('Array test: ', arr_test)
-    # Print arr_new
-    # print('Array new: ', arr_new)
-
     # Check the result
     result_check = np.array_equal(arr_new, arr_test)
     print('\nResult check: ', result_check)
     return result_check
 
 
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--test", help="run tests", action="store_true")
+    return parser.parse_args()
+
+def run_default():
+    # set default parameters here
+    default_dimension_sizes = [10, 10, 10]
+    default_max_block_x = 256
+    default_max_grid_x = 256
+    default_batch_size = 512
+
+    main(default_dimension_sizes, default_max_block_x, default_max_grid_x, default_batch_size)
+
 if __name__ == '__main__':
-    unittest.main()
+    args = get_args()
+    if args.test:
+        unittest.main(argv=['first-arg-is-ignored'], exit=False)
+    else:
+        run_default()

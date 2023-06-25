@@ -30,7 +30,7 @@ __global__ void loop_unrolling(
             // Divide by the dimension size
             tmp /= shape[dimension];
         }
-        printf("idx_full: %llu, idx: %llu, batch_start: %llu\n", idx_full, idx, batch_start);
+        //printf("idx_full: %llu, idx: %llu, batch_start: %llu\n", idx_full, idx, batch_start);
         // Set true if any index equals to 1
         for (unsigned int j = 0; j < dimensions_count; ++j)
         {
