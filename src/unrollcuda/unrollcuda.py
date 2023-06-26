@@ -9,7 +9,13 @@ from pycuda import gpuarray
 from pycuda.compiler import SourceModule
 import numpy as np
 import logging
+import pkg_resources
 
+try:
+    __version__ = pkg_resources.get_distribution("unrollcuda").version
+except pkg_resources.DistributionNotFound:
+    # Package is not installed
+    pass
 
 logging.basicConfig(level=logging.INFO)
 
@@ -50,6 +56,17 @@ class unrollcuda:
             self.logger.info(' '+msg)
         
     def inference(self, arr):
+        """
+        Perform computations on a provided array using the CUDA kernel specified in the `unrollcuda` instance.
+        
+        This method uses loop unrolling and batching techniques to efficiently handle array sizes larger than GPU memory. The computations are performed in batches, if needed, and the resulting array is reshaped back to the original shape before it is returned.
+        
+        Arguments:
+            arr (numpy.ndarray, required): The input array on which the computations will be performed. This can be a multi-dimensional array of any size.
+            
+        Returns:
+            numpy.ndarray: The resulting array after performing computations. The shape of this array will be the same as the input array `arr`.
+        """
         shape = arr.shape
         self.result_array = np.zeros(arr.size, dtype=np.bool_, order=self.reshape_order)
         if self.batch_size == 0:

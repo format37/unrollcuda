@@ -1,2 +1,2 @@
 clear
-sudo docker build -t cuda-tips .
+sudo docker build -t unrollcuda .
