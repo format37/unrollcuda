@@ -9,21 +9,14 @@ from pycuda import gpuarray
 from pycuda.compiler import SourceModule
 import numpy as np
 import logging
-import pkg_resources
-
-try:
-    __version__ = pkg_resources.get_distribution("unrollcuda").version
-except pkg_resources.DistributionNotFound:
-    # Package is not installed
-    pass
 
 logging.basicConfig(level=logging.INFO)
 
 
-class unrollcuda:
+class kernel:
     def __init__(
             self, 
-            kernel_code,
+            kernel_code='',
             gpu_id=0, 
             reshape_order='C',
             max_block_x=0, 
@@ -32,24 +25,33 @@ class unrollcuda:
             verbose=False
             ):
         self.verbose = verbose
-        if self.verbose:            
+        if self.verbose:
             self.logger = logging.getLogger(__name__)
 
-        self.gpu_id = gpu_id        
-        drv.init()
-        self.dev = drv.Device(self.gpu_id)
+        self.gpu_id = gpu_id
+        self.drv = drv
+        self.drv.init()
+        self.dev = self.drv.Device(self.gpu_id)
         self.ctx = self.dev.make_context()
         self.kernel_code = kernel_code
         self.reshape_order = reshape_order
         self.batch_size = batch_size
         if max_block_x == 0:
             self.max_block_x = self.dev.get_attribute(
-                drv.device_attribute.MAX_BLOCK_DIM_X
+                self.drv.device_attribute.MAX_BLOCK_DIM_X
                 )
         if max_grid_x == 0:
             self.max_grid_x = self.dev.get_attribute(
-                drv.device_attribute.MAX_GRID_DIM_X
+                self.drv.device_attribute.MAX_GRID_DIM_X
                 )
+            
+    def __del__(self):
+
+        try:
+            self.ctx.pop()
+            self.ctx.detach()
+        except:
+            pass
 
     def log(self, msg):
         if self.verbose:
@@ -67,8 +69,12 @@ class unrollcuda:
         Returns:
             numpy.ndarray: The resulting array after performing computations. The shape of this array will be the same as the input array `arr`.
         """
+        if self.kernel_code == '':
+            raise Exception('No kernel code provided')
+        
         shape = arr.shape
-        self.result_array = np.zeros(arr.size, dtype=np.bool_, order=self.reshape_order)
+        # self.result_array = np.zeros(arr.size, dtype=np.bool_, order=self.reshape_order)
+        self.result_array = np.zeros(arr.size, dtype=arr.dtype, order=self.reshape_order)
         if self.batch_size == 0:
             self.batch_size = arr.size
         arr = arr.reshape(-1, order=self.reshape_order)
