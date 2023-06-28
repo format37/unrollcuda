@@ -34,6 +34,7 @@ __global__ void unroll(
         for (unsigned int j = 0; j < dimensions_count; ++j)
         {
             // j is the dimension
+
             // Your code there ++
             if (indices[j] == 1)
             {
@@ -42,6 +43,8 @@ __global__ void unroll(
                 break;
             }
             // Your code there --
+            
+            
         }
         i += 1;
         idx_full = i * step + idx;

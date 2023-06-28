@@ -1,5 +1,5 @@
 import numpy as np
-from unrollcuda import unrollcuda
+import unrollcuda as uc
 
 
 def test(arr):
@@ -18,12 +18,14 @@ def main():
     reshape_order = 'C' # C or F
     shape = [int(size) for size in dimensions]
     arr = np.zeros(shape, dtype=np.bool_, order=reshape_order)
+    print('Array shape: ', arr.shape)
 
     with open('cross.cu', 'r') as f:
         kernel_code = f.read()
-
-    uc = unrollcuda(kernel_code)
-    arr_new = uc.inference(arr)
+    # Define the unrollcuda instance
+    ker = uc.kernel(kernel_code, verbose=False)
+    # Call inference
+    arr_new = ker.inference(arr)
 
     # Prepare the test array
     arr_test = arr.copy()
@@ -31,6 +33,8 @@ def main():
     arr_test = test(arr_test)
 
     # Check the result
+    # print('arr_test: ', arr_test)
+    # print('arr_new: ', arr_new)
     result_check = np.array_equal(arr_new, arr_test)
     print('\nResult check: ', result_check)
 
