@@ -36,9 +36,9 @@ __global__ void unroll(
             // j is the dimension
 
             // Your code there ++
-            if (indices[j] == 1)
+            if (indices[j] == 3)
             {
-                // Set true if any index equals to 1
+                // Set true if any index equals to 3
                 arr[idx_full] = true;
                 break;
             }
