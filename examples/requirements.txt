@@ -1,0 +1,6 @@
+pyvista
+PyMCubes==0.1.4
+trimesh==3.21.5
+trimesh[ray]
+trimesh[blender]
+# open3d==0.17.0
