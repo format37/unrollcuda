@@ -1,3 +1,5 @@
+#define MAX_DIMENSIONS 4 // Set the number of dimensions accordingly to your array
+
 __global__ void unroll(
     bool *arr,
     unsigned int *shape,
@@ -12,7 +14,7 @@ __global__ void unroll(
     unsigned long long idx = threadIdx.x + blockIdx.x * blockDim.x;
     unsigned long long idx_full;
     unsigned int i = 0;
-    unsigned int *indices = new unsigned int[dimensions_count]; // array to hold the computed indices
+    unsigned int indices[MAX_DIMENSIONS];
     unsigned long long tmp;
     
     idx_full = i * step + idx;

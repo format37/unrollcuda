@@ -1,6 +1,5 @@
 import numpy as np
-import dask.array as da
-import unrollcuda_test as uc
+import unrollcuda as uc
 from pycuda import gpuarray
 import time
 
@@ -47,11 +46,10 @@ def call_unroll(
 def main():
     start_time = time.time()
     dimensions = [2000, 1000, 1000]
+    print('Generating arr0...')
     arr0 = get_random_array(dimensions, 0, 10, np.uint32)
-    # print(arr0)
+    print('Generating arr1...')
     arr1 = get_random_array(dimensions, 0, 10, np.uint32)
-    # print(arr1)
-
     end_time = time.time()
     elapsed_time = end_time - start_time
     print('Data preparation time: '+str(elapsed_time))
@@ -61,9 +59,9 @@ def main():
         kernel_code = f.read()
     
     # Define the unrollcuda instance
-    ker = uc.kernel(kernel_code, verbose=True, max_block_x=0, batch_size=0)
+    ker = uc.kernel(kernel_code, verbose=True, batch_size=0) # Adjust batch_size to your GPU memory if it does not fit
     
-    # Redefine the call_unroll method
+    # Redefine the standard call_unroll method
     ker.call_unroll = call_unroll
     
     # Call inference with the new additional parameter

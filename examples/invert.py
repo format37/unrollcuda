@@ -4,7 +4,7 @@ import unrollcuda as uc
 
 def main():
         
-    dimensions = [3, 4, 7, 12]
+    dimensions = [2000, 100, 100, 100]
     shape = [int(size) for size in dimensions]
     # random boolean values
     arr = np.random.choice(
@@ -13,6 +13,7 @@ def main():
         p=[0.5, 0.5],
         )
     print('Array shape: ', arr.shape)
+    print('Array size: ', arr.size)
     
     # Read the kernel code from the file
     with open('invert.cu', 'r') as f:

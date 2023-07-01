@@ -1,5 +1,4 @@
-// Define MAX_DIMENSIONS as the maximum value dimensions_count can have
-#define MAX_DIMENSIONS 3 
+#define MAX_DIMENSIONS 3 // Set the number of dimensions accordingly to your array
 
 __global__ void unroll(
     unsigned int *arr0,
@@ -14,12 +13,8 @@ __global__ void unroll(
 )
 {
     unsigned long long idx = threadIdx.x + blockIdx.x * blockDim.x;
-    // if (idx==0) printf("gpu_arr_size: %llu, shape_total: %llu, dimensions_count: %llu, step: %llu, order: %u, batch_start: %llu\n", gpu_arr_size, shape_total, dimensions_count, step, order, batch_start);
     unsigned long long idx_full;
     unsigned long long i = 0;
-    //unsigned int *indices = new unsigned int[dimensions_count]; // array to hold the computed indices
-    // Declare indices as a fixed-size array in shared memory
-    //__shared__ unsigned int indices[MAX_DIMENSIONS];
     unsigned int indices[MAX_DIMENSIONS];
     unsigned long long tmp;
     

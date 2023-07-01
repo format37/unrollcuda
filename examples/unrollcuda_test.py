@@ -67,8 +67,7 @@ class kernel:
             **kwargs
             ):
         self.unroll(
-            self.gpu_arr, 
-            self.gpu_arr, 
+            self.gpu_arr,
             self.gpu_shape,
             self.gpu_arr_size, 
             self.arr_size, 
@@ -81,15 +80,40 @@ class kernel:
             )
     def inference(self, arr, **kwargs):
         """
-        Perform computations on a provided array using the CUDA kernel specified in the `unrollcuda` instance.
-        
-        This method uses loop unrolling and batching techniques to efficiently handle array sizes larger than GPU memory. The computations are performed in batches, if needed, and the resulting array is reshaped back to the original shape before it is returned.
-        
-        Arguments:
-            arr (numpy.ndarray, required): The input array on which the computations will be performed. This can be a multi-dimensional array of any size.
-            
-        Returns:
-            numpy.ndarray: The resulting array after performing computations. The shape of this array will be the same as the input array `arr`.
+The `inference` function in the `kernel` class executes computations on a provided numpy array using the CUDA kernel defined in the `kernel` class instance. The computations can handle multidimensional arrays of any size. If the array size is larger than what the GPU memory can accommodate, the function employs techniques of loop unrolling and batching to manage the computations efficiently. 
+
+The function accepts a numpy array as an input and performs the specified computations in batches if necessary. After the computations, it reshapes the resulting array back to its original shape before returning it. 
+
+The function signature is: `inference(self, arr, **kwargs)`
+
+Parameters:
+
+- `arr` (numpy.ndarray, required): This is the input array on which computations are performed. It can be a multidimensional array of any size.
+
+- `**kwargs`: Any additional keyword arguments to be passed to the function.
+
+Returns:
+
+- `numpy.ndarray`: This is the output array after performing computations. Its shape is identical to the input array `arr`.
+
+Please note, the function raises an exception if no kernel code is provided in the `kernel` class instance. Also, ensure the GPU is set up correctly and the CUDA drivers are installed, as the function does not handle GPU or CUDA related errors.
+
+Usage example:
+
+```python
+import unrollcuda as uc
+
+# Instantiate the kernel class
+ker = uc.kernel(kernel_code)
+
+# Create an array
+arr = np.random.rand(1000, 1000)
+
+# Use the inference function to perform computations on the array
+arr_new = ker.inference(arr)
+``` 
+
+In this example, `kernel_code` would be the CUDA code you've written as a string, and `arr` is a 1000x1000 numpy array. The `inference` method performs computations on `arr` using the CUDA code provided and returns the resulting array.
         """
         if self.kernel_code == '':
             raise Exception('No kernel code provided')
@@ -119,12 +143,6 @@ class kernel:
             self.reshape_order_gpu = np.uint8(0 if self.reshape_order=='C' else 1)
             self.batch_start_gpu = np.uint64(self.batch_start)            
             self.call_unroll(self, **kwargs)
-            # Then check the error status
-            # ntext.synchronize()  # Wait for the GPU to finish its tasks
-
-            # err = self.drv.get_last_error()
-            """if err is not None:
-                print("CUDA error:", drv.Error(err))  # This will print the error string"""
             self.result_array[self.batch_start:self.batch_start+self.gpu_arr.size] = self.gpu_arr.get()
             self.batch_start += self.batch_size
 
