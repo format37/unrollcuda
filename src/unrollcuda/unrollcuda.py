@@ -40,10 +40,14 @@ class kernel:
             self.max_block_x = self.dev.get_attribute(
                 self.drv.device_attribute.MAX_BLOCK_DIM_X
                 )
+        else:
+            self.max_block_x = max_block_x
         if max_grid_x == 0:
             self.max_grid_x = self.dev.get_attribute(
                 self.drv.device_attribute.MAX_GRID_DIM_X
                 )
+        else:
+            self.max_grid_x = max_grid_x
             
     def __del__(self):
 
@@ -56,18 +60,60 @@ class kernel:
     def log(self, msg):
         if self.verbose:
             self.logger.info(' '+msg)
-        
-    def inference(self, arr):
+
+    def call_unroll(
+            self, 
+            self_tmp,
+            **kwargs
+            ):
+        self.unroll(
+            self.gpu_arr,
+            self.gpu_shape,
+            self.gpu_arr_size, 
+            self.arr_size, 
+            self.len_shape, 
+            self.step, 
+            self.reshape_order_gpu,            
+            self.batch_start_gpu, 
+            block=self.block,
+            grid=self.grid
+            )
+    def inference(self, arr, **kwargs):
         """
-        Perform computations on a provided array using the CUDA kernel specified in the `unrollcuda` instance.
-        
-        This method uses loop unrolling and batching techniques to efficiently handle array sizes larger than GPU memory. The computations are performed in batches, if needed, and the resulting array is reshaped back to the original shape before it is returned.
-        
-        Arguments:
-            arr (numpy.ndarray, required): The input array on which the computations will be performed. This can be a multi-dimensional array of any size.
-            
-        Returns:
-            numpy.ndarray: The resulting array after performing computations. The shape of this array will be the same as the input array `arr`.
+The `inference` function in the `kernel` class executes computations on a provided numpy array using the CUDA kernel defined in the `kernel` class instance. The computations can handle multidimensional arrays of any size. If the array size is larger than what the GPU memory can accommodate, the function employs techniques of loop unrolling and batching to manage the computations efficiently. 
+
+The function accepts a numpy array as an input and performs the specified computations in batches if necessary. After the computations, it reshapes the resulting array back to its original shape before returning it. 
+
+The function signature is: `inference(self, arr, **kwargs)`
+
+Parameters:
+
+- `arr` (numpy.ndarray, required): This is the input array on which computations are performed. It can be a multidimensional array of any size.
+
+- `**kwargs`: Any additional keyword arguments to be passed to the function.
+
+Returns:
+
+- `numpy.ndarray`: This is the output array after performing computations. Its shape is identical to the input array `arr`.
+
+Please note, the function raises an exception if no kernel code is provided in the `kernel` class instance. Also, ensure the GPU is set up correctly and the CUDA drivers are installed, as the function does not handle GPU or CUDA related errors.
+
+Usage example:
+
+```python
+import unrollcuda as uc
+
+# Instantiate the kernel class
+ker = uc.kernel(kernel_code)
+
+# Create an array
+arr = np.random.rand(1000, 1000)
+
+# Use the inference function to perform computations on the array
+arr_new = ker.inference(arr)
+``` 
+
+In this example, `kernel_code` would be the CUDA code you've written as a string, and `arr` is a 1000x1000 numpy array. The `inference` method performs computations on `arr` using the CUDA code provided and returns the resulting array.
         """
         if self.kernel_code == '':
             raise Exception('No kernel code provided')
@@ -80,31 +126,25 @@ class kernel:
         arr = arr.reshape(-1, order=self.reshape_order)
         total_elements = arr.size
 
-        batch_start = 0
-        while batch_start < total_elements:
-            self.log('Batch start: '+str(batch_start))
-            gpu_arr = gpuarray.to_gpu(arr[batch_start:batch_start+self.batch_size])
-            gpu_shape = gpuarray.to_gpu(np.array(shape, dtype=np.uint32))
-            block = (int(self.max_block_x), 1, 1)
-            grid = (int(min(np.ceil(gpu_arr.size / self.max_block_x), self.max_grid_x)), 1, 1)
-            step = grid[0] * block[0]
-            ker = SourceModule(self.kernel_code)
-            unroll = ker.get_function("unroll")
-            unroll(
-                gpu_arr,
-                gpu_shape,
-                np.uint64(gpu_arr.size),
-                np.uint64(arr.size),
-                np.uint64(len(shape)),
-                np.uint64(step),
-                np.uint8(0 if self.reshape_order=='C' else 1),
-                np.uint64(batch_start),
-                block=block,
-                grid=grid
-            )
-
-            self.result_array[batch_start:batch_start+gpu_arr.size] = gpu_arr.get()
-            batch_start += self.batch_size
+        self.batch_start = 0
+        while self.batch_start < total_elements:
+            self.log('Batch start: '+str(self.batch_start))
+            self.gpu_arr = gpuarray.to_gpu(arr[self.batch_start:self.batch_start+self.batch_size])
+            self.gpu_shape = gpuarray.to_gpu(np.array(shape, dtype=np.uint32))
+            self.block = (int(self.max_block_x), 1, 1)
+            self.grid = (int(min(np.ceil(self.gpu_arr.size / self.max_block_x), self.max_grid_x)), 1, 1)
+            self.step = self.grid[0] * self.block[0]
+            kernel_source = SourceModule(self.kernel_code)
+            self.unroll = kernel_source.get_function("unroll")
+            self.gpu_arr_size = np.uint64(self.gpu_arr.size)
+            self.arr_size = np.uint64(arr.size)
+            self.len_shape = np.uint64(len(shape))
+            self.step = np.uint64(self.step)
+            self.reshape_order_gpu = np.uint8(0 if self.reshape_order=='C' else 1)
+            self.batch_start_gpu = np.uint64(self.batch_start)            
+            self.call_unroll(self, **kwargs)
+            self.result_array[self.batch_start:self.batch_start+self.gpu_arr.size] = self.gpu_arr.get()
+            self.batch_start += self.batch_size
 
         self.result_array = self.result_array.reshape(shape, order=self.reshape_order)
         self.ctx.pop()
