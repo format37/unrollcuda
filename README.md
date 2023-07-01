@@ -242,6 +242,8 @@ def main():
 if __name__ == '__main__':
     main()
 ```
+Result object:
+![cross](assets/cross.png)
 #### Perfrorm an elementwise multiplication of two random int arrays
 elementwise_mul.cu
 ```
