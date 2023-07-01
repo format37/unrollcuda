@@ -40,10 +40,14 @@ class kernel:
             self.max_block_x = self.dev.get_attribute(
                 self.drv.device_attribute.MAX_BLOCK_DIM_X
                 )
+        else:
+            self.max_block_x = max_block_x
         if max_grid_x == 0:
             self.max_grid_x = self.dev.get_attribute(
                 self.drv.device_attribute.MAX_GRID_DIM_X
                 )
+        else:
+            self.max_grid_x = max_grid_x
             
     def __del__(self):
 
@@ -115,7 +119,12 @@ class kernel:
             self.reshape_order_gpu = np.uint8(0 if self.reshape_order=='C' else 1)
             self.batch_start_gpu = np.uint64(self.batch_start)            
             self.call_unroll(self, **kwargs)
+            # Then check the error status
+            # ntext.synchronize()  # Wait for the GPU to finish its tasks
 
+            # err = self.drv.get_last_error()
+            """if err is not None:
+                print("CUDA error:", drv.Error(err))  # This will print the error string"""
             self.result_array[self.batch_start:self.batch_start+self.gpu_arr.size] = self.gpu_arr.get()
             self.batch_start += self.batch_size
 

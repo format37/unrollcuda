@@ -1,4 +1,5 @@
 import numpy as np
+import dask.array as da
 import unrollcuda_test as uc
 from pycuda import gpuarray
 import time
@@ -25,6 +26,8 @@ def call_unroll(
             ]
     # Send the array to GPU
     gpu_arr1 = gpuarray.to_gpu(gpu_arr1)
+    self.log('self.block: '+str(self.block))
+    self.log('self.grid: '+str(self.grid))
     # Call the kernel with the additiona array
     self.unroll(
         self.gpu_arr, 
@@ -42,19 +45,23 @@ def call_unroll(
     
 
 def main():
-
-    dimensions = [2000, 2000, 10]
+    start_time = time.time()
+    dimensions = [2000, 1000, 1000]
     arr0 = get_random_array(dimensions, 0, 10, np.uint32)
     # print(arr0)
     arr1 = get_random_array(dimensions, 0, 10, np.uint32)
     # print(arr1)
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print('Data preparation time: '+str(elapsed_time))
     
     # Read the kernel code from the file
     with open('elementwise_mul.cu', 'r') as f:
         kernel_code = f.read()
     
     # Define the unrollcuda instance
-    ker = uc.kernel(kernel_code, verbose=False, batch_size=270000)
+    ker = uc.kernel(kernel_code, verbose=True, max_block_x=0, batch_size=0)
     
     # Redefine the call_unroll method
     ker.call_unroll = call_unroll
