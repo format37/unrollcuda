@@ -1,2 +1,4 @@
 *.pyc
 CLAUDE.md
+*.whl
+dist/
