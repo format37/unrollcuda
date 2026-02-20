@@ -2,6 +2,7 @@ import numpy as np
 import unrollcuda as uc
 from pycuda import gpuarray
 import time
+import types
 
 def get_random_array(dimensions, start, end, dtype):
     # mean and standard deviation, based on start and end values
@@ -21,7 +22,7 @@ def call_unroll(
     gpu_arr1 = kwargs['arr1'].reshape(-1, order=self.reshape_order)
     # We need to split array the same way as the original array
     gpu_arr1 = gpu_arr1[
-            self.batch_start:self.batch_start+self.batch_size
+            self.batch_start:self.batch_start+self.gpu_arr.size
             ]
     # Send the array to GPU
     gpu_arr1 = gpuarray.to_gpu(gpu_arr1)
@@ -62,7 +63,7 @@ def main():
     ker = uc.kernel(kernel_code, verbose=True, batch_size=0) # Adjust batch_size to your GPU memory if it does not fit
     
     # Redefine the standard call_unroll method
-    ker.call_unroll = call_unroll
+    ker.call_unroll = types.MethodType(call_unroll, ker)
     
     # Call inference with the new additional parameter
     start_time = time.time()

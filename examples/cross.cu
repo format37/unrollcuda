@@ -49,6 +49,4 @@ __global__ void unroll(
         i += 1;
         idx_full = i * step + idx;
     }
-    // Free the memory
-    delete[] indices;
 }

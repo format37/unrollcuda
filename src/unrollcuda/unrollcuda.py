@@ -61,20 +61,16 @@ class kernel:
         if self.verbose:
             self.logger.info(' '+msg)
 
-    def call_unroll(
-            self, 
-            self_tmp,
-            **kwargs
-            ):
+    def call_unroll(self, **kwargs):
         self.unroll(
             self.gpu_arr,
             self.gpu_shape,
-            self.gpu_arr_size, 
-            self.arr_size, 
-            self.len_shape, 
-            self.step, 
-            self.reshape_order_gpu,            
-            self.batch_start_gpu, 
+            self.gpu_arr_size,
+            self.arr_size,
+            self.len_shape,
+            self.step,
+            self.reshape_order_gpu,
+            self.batch_start_gpu,
             block=self.block,
             grid=self.grid
             )
@@ -117,36 +113,34 @@ In this example, `kernel_code` would be the CUDA code you've written as a string
         """
         if self.kernel_code == '':
             raise Exception('No kernel code provided')
-        
+
         shape = arr.shape
-        # self.result_array = np.zeros(arr.size, dtype=np.bool_, order=self.reshape_order)
         self.result_array = np.zeros(arr.size, dtype=arr.dtype, order=self.reshape_order)
-        if self.batch_size == 0:
-            self.batch_size = arr.size
+        effective_batch_size = self.batch_size if self.batch_size > 0 else arr.size
         arr = arr.reshape(-1, order=self.reshape_order)
         total_elements = arr.size
+
+        kernel_source = SourceModule(self.kernel_code)
+        self.unroll = kernel_source.get_function("unroll")
 
         self.batch_start = 0
         while self.batch_start < total_elements:
             self.log('Batch start: '+str(self.batch_start))
-            self.gpu_arr = gpuarray.to_gpu(arr[self.batch_start:self.batch_start+self.batch_size])
+            self.gpu_arr = gpuarray.to_gpu(arr[self.batch_start:self.batch_start+effective_batch_size])
             self.gpu_shape = gpuarray.to_gpu(np.array(shape, dtype=np.uint32))
             self.block = (int(self.max_block_x), 1, 1)
             self.grid = (int(min(np.ceil(self.gpu_arr.size / self.max_block_x), self.max_grid_x)), 1, 1)
             self.step = self.grid[0] * self.block[0]
-            kernel_source = SourceModule(self.kernel_code)
-            self.unroll = kernel_source.get_function("unroll")
             self.gpu_arr_size = np.uint64(self.gpu_arr.size)
             self.arr_size = np.uint64(arr.size)
             self.len_shape = np.uint64(len(shape))
             self.step = np.uint64(self.step)
             self.reshape_order_gpu = np.uint8(0 if self.reshape_order=='C' else 1)
-            self.batch_start_gpu = np.uint64(self.batch_start)            
-            self.call_unroll(self, **kwargs)
+            self.batch_start_gpu = np.uint64(self.batch_start)
+            self.call_unroll(**kwargs)
             self.result_array[self.batch_start:self.batch_start+self.gpu_arr.size] = self.gpu_arr.get()
-            self.batch_start += self.batch_size
+            self.batch_start += effective_batch_size
 
         self.result_array = self.result_array.reshape(shape, order=self.reshape_order)
-        self.ctx.pop()
 
         return self.result_array
